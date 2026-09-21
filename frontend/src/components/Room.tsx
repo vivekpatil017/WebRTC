@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import {
   Mic, MicOff, Video, VideoOff, PhoneOff,
-  Users, Copy, Check, Wifi, MessageSquare, MonitorUp
+  Users, Copy, Check, Wifi, MessageSquare, MonitorUp, Settings
 } from "lucide-react";
 import { motion } from "motion/react";
 import WorldMap from "@/components/ui/world-map";
 import { Liquid } from "@/components/ui/button-1";
+import { VoiceChatDisclosure, type VoiceUser } from "@/components/ui/voice-chat-disclosure";
 
 const COLORS = {
   color1: '#FFFFFF',
@@ -63,7 +64,7 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 }
 
 // ─── PeerVideo ────────────────────────────────────────────────────────────────
-function PeerVideo({ stream, label }: { stream: MediaStream | null; label: string }) {
+function PeerVideo({ stream, label, spanAll }: { stream: MediaStream | null; label: string; spanAll?: boolean }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [hasVideo, setHasVideo] = useState(false);
 
@@ -76,37 +77,42 @@ function PeerVideo({ stream, label }: { stream: MediaStream | null; label: strin
     }
   }, [stream]);
 
-  const initials = label.slice(0, 2).toUpperCase();
+  const initials = label ? label.slice(0, 2).toUpperCase() : "?";
 
   return (
     <div
-      className="tile-in pulse-ring"
+      className="tile-in"
       style={{
-        position: "relative", borderRadius: 16, overflow: "hidden",
-        background: "#111", width: "100%", height: "100%",
-        border: "1px solid rgba(255,255,255,0.08)",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+        position: "relative", borderRadius: 14, overflow: "hidden",
+        background: "#1e2435",
+        gridColumn: spanAll ? "1 / -1" : "auto",
+        height: "100%", width: "auto", maxWidth: "100%", aspectRatio: "4/3",
+        border: "1.5px solid rgba(255,255,255,0.1)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
       }}
     >
-      {/* Shimmer skeleton while connecting */}
+      {/* Avatar while connecting */}
       {!hasVideo && (
-        <div
-          className="shimmer-bg"
-          style={{
-            position: "absolute", inset: 0,
-            display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center", gap: 12,
-          }}
-        >
+        <div style={{
+          position: "absolute", inset: 0,
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 12,
+          background: "linear-gradient(135deg, #1e2435 0%, #151a28 100%)",
+        }}>
           <div style={{
-            width: 52, height: 52, borderRadius: "50%",
-            background: "rgba(255,255,255,0.08)",
+            width: 64, height: 64, borderRadius: "50%",
+            background: "linear-gradient(135deg, rgba(99,102,241,0.4), rgba(59,130,246,0.3))",
+            border: "2px solid rgba(99,102,241,0.4)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 20, fontWeight: 700, color: "rgba(255,255,255,0.3)",
+            fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.85)",
+            letterSpacing: "-0.5px",
           }}>
             {initials}
           </div>
-          <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 12 }}>Connecting…</span>
+          <span style={{
+            color: "rgba(255,255,255,0.3)", fontSize: 12,
+            fontWeight: 500, letterSpacing: "0.03em"
+          }}>Connecting…</span>
         </div>
       )}
 
@@ -116,64 +122,132 @@ function PeerVideo({ stream, label }: { stream: MediaStream | null; label: strin
         autoPlay
         playsInline
         style={{
-          width: "100%", height: "100%", objectFit: "cover",
-          opacity: hasVideo ? 1 : 0, transition: "opacity 0.4s ease",
+          position: "absolute", inset: 0,
+          width: "100%", height: "100%", display: "block",
+          objectFit: "cover",
+          opacity: hasVideo ? 1 : 0, transition: "opacity 0.5s ease",
         }}
       />
 
-      {/* Name badge */}
+      {/* Bottom gradient overlay */}
       <div style={{
-        position: "absolute", bottom: 10, left: 10,
-        background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)",
-        color: "#fff", fontSize: 11, fontWeight: 500,
-        padding: "4px 10px", borderRadius: 8,
-        border: "1px solid rgba(255,255,255,0.1)",
-      }}>
-        {label}
-      </div>
-
-      {/* Hover ring */}
-      <div style={{
-        position: "absolute", inset: 0, borderRadius: 16,
-        border: "1px solid rgba(255,255,255,0)",
-        transition: "border-color 0.3s",
+        position: "absolute", bottom: 0, left: 0, right: 0, height: 80,
+        background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)",
         pointerEvents: "none",
       }} />
+
+      {/* Name + mic badge — bottom left */}
+      <div style={{
+        position: "absolute", bottom: 10, left: 10,
+        display: "flex", alignItems: "center", gap: 6,
+      }}>
+        <span style={{
+          background: "rgba(0,0,0,0.55)", backdropFilter: "blur(10px)",
+          color: "#fff", fontSize: 12, fontWeight: 600,
+          padding: "4px 10px 4px 8px", borderRadius: 8,
+          border: "1px solid rgba(255,255,255,0.12)",
+          display: "flex", alignItems: "center", gap: 5,
+        }}>
+          <Mic size={11} style={{ opacity: 0.75 }} />
+          {label}
+        </span>
+      </div>
+
+      {/* Mute icon — top right (simulated; peers don't broadcast mute state yet) */}
+      <div style={{
+        position: "absolute", top: 10, right: 10,
+        background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)",
+        borderRadius: 8, padding: "5px 6px", lineHeight: 0,
+        border: "1px solid rgba(255,255,255,0.1)",
+      }}>
+        <Mic size={13} style={{ opacity: 0.55, color: "#fff" }} />
+      </div>
     </div>
   );
 }
 
 // ─── ControlButton ────────────────────────────────────────────────────────────
 function CtrlBtn({
-  onClick, active, danger, title, children,
+  onClick, active, danger, title, badge, children,
 }: {
   onClick: () => void;
   active?: boolean;
   danger?: boolean;
   title?: string;
+  badge?: string | number;
   children: React.ReactNode;
 }) {
-  const cls = danger ? "ctrl-btn leave" : active ? "ctrl-btn on" : "ctrl-btn off";
+  const bg = danger
+    ? "rgba(239,68,68,0.9)"
+    : active
+      ? "rgba(255,255,255,0.15)"
+      : "rgba(255,255,255,0.08)";
+  const border = danger
+    ? "1.5px solid rgba(239,68,68,0.5)"
+    : active
+      ? "1.5px solid rgba(255,255,255,0.22)"
+      : "1.5px solid rgba(255,255,255,0.1)";
+
   return (
-    <button className={cls} onClick={onClick} title={title}>
-      {children}
-    </button>
+    <div style={{ position: "relative" }}>
+      <button
+        onClick={onClick}
+        title={title}
+        style={{
+          width: 48, height: 48,
+          borderRadius: "50%",
+          background: bg,
+          border,
+          color: "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer",
+          transition: "background 0.18s, transform 0.12s, border-color 0.18s",
+          backdropFilter: "blur(8px)",
+          boxShadow: danger ? "0 0 16px rgba(239,68,68,0.35)" : "none",
+        }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLButtonElement).style.background = danger
+            ? "rgba(239,68,68,1)"
+            : "rgba(255,255,255,0.22)";
+          (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.08)";
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLButtonElement).style.background = bg;
+          (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
+        }}
+      >
+        {children}
+      </button>
+      {badge !== undefined && (
+        <span style={{
+          position: "absolute", top: -2, right: -2,
+          background: "#ef4444", color: "#fff",
+          fontSize: 10, fontWeight: 700,
+          width: 18, height: 18, borderRadius: "50%",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          border: "2px solid #1a2035",
+        }}>
+          {typeof badge === 'number' && badge > 9 ? "9+" : badge}
+        </span>
+      )}
+    </div>
   );
 }
 
 // ─── Room ─────────────────────────────────────────────────────────────────────
 export function Room() {
   const [roomInput, setRoomInput] = useState("");
+  const [userNameInput, setUserNameInput] = useState("");
   const [isHovered, setIsHovered] = useState(false);
   const [joined, setJoined] = useState(false);
   const [error, setError] = useState("");
-  const [peers, setPeers] = useState<{ userId: string; stream: MediaStream | null }[]>([]);
+  const [peers, setPeers] = useState<{ userId: string; stream: MediaStream | null; userName: string }[]>([]);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [copied, setCopied] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [messages, setMessages] = useState<{from: string, text: string, time: number}[]>([]);
+  const [messages, setMessages] = useState<{ from: string, text: string, time: number }[]>([]);
   const [unread, setUnread] = useState(0);
   const [screenOn, setScreenOn] = useState(false);
   const [chatInput, setChatInput] = useState("");
@@ -221,7 +295,7 @@ export function Room() {
       setPeers(prev => {
         const found = prev.find(p => p.userId === remoteId);
         if (found) return found.stream ? prev : prev.map(p => p.userId === remoteId ? { ...p, stream } : p);
-        return [...prev, { userId: remoteId, stream }];
+        return [...prev, { userId: remoteId, stream, userName: "Unknown" }];
       });
     };
 
@@ -240,7 +314,11 @@ export function Room() {
 
   async function joinRoom() {
     const id = roomInput.trim();
-    if (!id) return;
+    const name = userNameInput.trim();
+    if (!id || !name) {
+      setError("Please enter both a name and a room ID.");
+      return;
+    }
     setError("");
     roomId.current = id;
 
@@ -255,19 +333,24 @@ export function Room() {
 
     const ws = new WebSocket("ws://localhost:8080");
     socketRef.current = ws;
-    ws.onopen = () => send({ type: "join", roomId: id, userId: userId.current });
+    ws.onopen = () => send({ type: "join", roomId: id, userId: userId.current, userName: name });
 
     ws.onmessage = async (event) => {
       const msg = JSON.parse(event.data);
       switch (msg.type) {
         case "joined":
           setJoined(true);
-          setPeers(msg.peers.map((uid: string) => ({ userId: uid, stream: null })));
+          setPeers(msg.peers.map((p: any) => ({
+            userId: typeof p === 'string' ? p : p.userId,
+            userName: typeof p === 'string' ? "Unknown" : p.userName,
+            stream: null
+          })));
           break;
         case "peer-joined": {
           const remoteId: string = msg.userId;
-          setToastMsg(`${remoteId} joined`);
-          setPeers(prev => [...prev, { userId: remoteId, stream: null }]);
+          const remoteName: string = msg.userName;
+          setToastMsg(`${remoteName || remoteId} joined`);
+          setPeers(prev => [...prev, { userId: remoteId, userName: remoteName, stream: null }]);
           const pc = getPC(remoteId);
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
@@ -297,11 +380,14 @@ export function Room() {
           break;
         }
         case "peer-left":
-          setToastMsg(`${msg.userId} left`);
+          const leftPeer = peers.find(p => p.userId === msg.userId);
+          setToastMsg(`${leftPeer?.userName || msg.userId} left`);
           removePC(msg.userId);
           break;
         case "chat": {
-          setMessages(prev => [...prev, { from: msg.from, text: msg.text, time: msg.time }]);
+          // If we receive a message from a peer, use their display name
+          const peerName = peers.find(p => p.userId === msg.from)?.userName || msg.from;
+          setMessages(prev => [...prev, { from: peerName, text: msg.text, time: msg.time }]);
           if (!chatOpen) setUnread(u => u + 1);
           setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
           break;
@@ -461,16 +547,31 @@ export function Room() {
               Join a Room
             </h1>
             <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, margin: 0 }}>
-              Your ID: <span style={{ color: "rgba(255,255,255,0.6)", fontFamily: "monospace" }}>{userId.current}</span>
+              Enter your name and the room ID to join.
             </p>
           </div>
 
           <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10 }}>
             <input
+              value={userNameInput}
+              onChange={e => setUserNameInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && joinRoom()}
+              placeholder="Your Name…"
+              style={{
+                width: "100%", boxSizing: "border-box",
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                color: "#fff", borderRadius: 12, padding: "13px 16px",
+                fontSize: 14, outline: "none", transition: "border-color 0.2s",
+              }}
+              onFocus={e => (e.target.style.borderColor = "rgba(255,255,255,0.35)")}
+              onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.12)")}
+            />
+            <input
               value={roomInput}
               onChange={e => setRoomInput(e.target.value)}
               onKeyDown={e => e.key === "Enter" && joinRoom()}
-              placeholder="Enter room ID…"
+              placeholder="Room ID…"
               style={{
                 width: "100%", boxSizing: "border-box",
                 background: "rgba(255,255,255,0.05)",
@@ -532,7 +633,11 @@ export function Room() {
   const rows = Math.ceil(total / cols);
 
   return (
-    <div style={{ height: "100vh", overflow: "hidden", background: "#0a0a0a", display: "flex", flexDirection: "column", position: "relative" }}>
+    <div style={{
+      height: "100vh", overflow: "hidden",
+      background: "linear-gradient(160deg, #141927 0%, #0e1420 50%, #0a1018 100%)",
+      display: "flex", flexDirection: "column", position: "relative",
+    }}>
 
       {/* Toast notification */}
       {toastMsg && <Toast message={toastMsg} onDone={() => setToastMsg(null)} />}
@@ -540,248 +645,390 @@ export function Room() {
       {/* ── Header ── */}
       <header style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "12px 20px",
-        background: "rgba(0,0,0,0.7)", backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(255,255,255,0.07)", flexShrink: 0,
+        padding: "14px 24px",
+        background: "rgba(10,16,24,0.8)", backdropFilter: "blur(20px)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* Live indicator */}
-          <span style={{
+        {/* Left: logo + room name */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
             width: 8, height: 8, borderRadius: "50%", background: "#22c55e",
-            boxShadow: "0 0 6px #22c55e", flexShrink: 0,
-          }} className="pulse-ring" />
-          <span style={{ color: "#fff", fontWeight: 600, fontSize: 14 }}>{roomId.current}</span>
+            boxShadow: "0 0 8px rgba(34,197,94,0.8)", flexShrink: 0,
+          }} />
+          <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, fontWeight: 500 }}>
+            LIVE
+          </span>
+          <div style={{ width: 1, height: 14, background: "rgba(255,255,255,0.1)" }} />
+          <span style={{
+            color: "#fff", fontWeight: 700, fontSize: 15,
+            letterSpacing: "-0.01em",
+          }}>
+            {roomId.current}
+          </span>
           <button
             onClick={copyRoomId}
             style={{
               background: "none", border: "none", cursor: "pointer",
-              color: "rgba(255,255,255,0.35)", padding: 4, lineHeight: 0,
+              color: "rgba(255,255,255,0.3)", padding: 4, lineHeight: 0,
               transition: "color 0.2s",
             }}
-            onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
-            onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+            onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.8)")}
+            onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
             title="Copy room ID"
           >
-            {copied ? <Check size={14} color="#22c55e" /> : <Copy size={14} />}
+            {copied ? <Check size={13} color="#22c55e" /> : <Copy size={13} />}
           </button>
-        </div>
-
-        <div style={{
-          display: "flex", alignItems: "center", gap: 6,
-          color: "rgba(255,255,255,0.45)", fontSize: 13,
-        }}>
-          <Users size={14} />
-          <span>{total} / 5</span>
         </div>
       </header>
 
       <div style={{ flex: 1, display: "flex", minHeight: 0, position: "relative", overflow: "hidden" }}>
         {/* ── Video Grid ── */}
-      <main style={{
-        flex: 1, padding: 16,
-        paddingRight: chatOpen ? 320 + 16 : 16,
-        transition: "padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden"
-      }}>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${cols}, 1fr)`,
-          gridTemplateRows: `repeat(${rows}, 1fr)`,
-          gap: 12, flex: 1, minHeight: 0
+        <main style={{
+          flex: 1, padding: "12px 12px 0 12px",
+          paddingRight: chatOpen ? 340 + 12 : 12,
+          transition: "padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden",
         }}>
-          {/* Local tile */}
-          <div
-            className="tile-in"
-            style={{
-              position: "relative", borderRadius: 16, overflow: "hidden",
-              background: "#111", width: "100%", height: "100%",
-              border: "1px solid rgba(255,255,255,0.08)",
-              boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
-            }}
-          >
-            <video
-              ref={localVideoRef}
-              autoPlay muted playsInline
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${cols}, minmax(0, auto))`,
+            gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+            gap: 10, flex: 1, minHeight: 0,
+            alignItems: "center",
+            justifyItems: "center",
+            justifyContent: "center",
+          }}>
+            {/* Local tile */}
+            <div
+              className="tile-in"
               style={{
-                width: "100%", height: "100%", objectFit: "cover",
-                opacity: camOn ? 1 : 0, transition: "opacity 0.3s",
+                position: "relative", borderRadius: 14, overflow: "hidden",
+                background: "#1e2435",
+                height: "100%", width: "auto", maxWidth: "100%", aspectRatio: "4/3",
+                border: "1.5px solid rgba(255,255,255,0.1)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
               }}
-            />
+            >
+              <video
+                ref={localVideoRef}
+                autoPlay muted playsInline
+                style={{
+                  position: "absolute", inset: 0,
+                  width: "100%", height: "100%", display: "block",
+                  objectFit: "cover",
+                  opacity: camOn ? 1 : 0, transition: "opacity 0.3s",
+                }}
+              />
 
-            {/* Camera-off avatar */}
-            {!camOn && (
-              <div style={{
-                position: "absolute", inset: 0,
-                display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center", gap: 10,
-              }}>
+              {/* Camera-off avatar */}
+              {!camOn && (
                 <div style={{
-                  width: 52, height: 52, borderRadius: "50%",
-                  background: "rgba(255,255,255,0.08)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 20, fontWeight: 700, color: "rgba(255,255,255,0.4)",
+                  position: "absolute", inset: 0,
+                  display: "flex", flexDirection: "column",
+                  alignItems: "center", justifyContent: "center", gap: 10,
+                  background: "linear-gradient(135deg, #1e2435 0%, #151a28 100%)",
                 }}>
-                  {userId.current.slice(0, 2).toUpperCase()}
+                  <div style={{
+                    width: 64, height: 64, borderRadius: "50%",
+                    background: "linear-gradient(135deg, rgba(99,102,241,0.4), rgba(59,130,246,0.3))",
+                    border: "2px solid rgba(99,102,241,0.4)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.85)",
+                  }}>
+                    {userNameInput.slice(0, 2).toUpperCase() || "ME"}
+                  </div>
+                  <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, fontWeight: 500 }}>Camera off</span>
                 </div>
-                <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>Camera off</span>
-              </div>
-            )}
+              )}
 
-            {/* Badges */}
-            <div style={{ position: "absolute", bottom: 10, left: 10, display: "flex", gap: 6, alignItems: "center" }}>
-              <span style={{
-                background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)",
-                color: "#fff", fontSize: 11, fontWeight: 500,
-                padding: "4px 10px", borderRadius: 8,
-                border: "1px solid rgba(255,255,255,0.1)",
+              {/* Bottom gradient */}
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0, height: 80,
+                background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)",
+                pointerEvents: "none",
+              }} />
+
+              {/* Name badge bottom-left */}
+              <div style={{
+                position: "absolute", bottom: 10, left: 10,
+                display: "flex", alignItems: "center", gap: 6,
               }}>
-                You · {userId.current}
-              </span>
-              {!micOn && (
                 <span style={{
-                  background: "rgba(220,38,38,0.8)", backdropFilter: "blur(8px)",
-                  padding: "4px 6px", borderRadius: 8, lineHeight: 0,
+                  background: "rgba(0,0,0,0.55)", backdropFilter: "blur(10px)",
+                  color: "#fff", fontSize: 12, fontWeight: 600,
+                  padding: "4px 10px 4px 8px", borderRadius: 8,
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  display: "flex", alignItems: "center", gap: 5,
                 }}>
-                  <MicOff size={11} color="#fff" />
+                  <Mic size={11} style={{ opacity: micOn ? 0.8 : 0.3, color: micOn ? "#4ade80" : "#fff" }} />
+                  {userNameInput || "You"}
                 </span>
+              </div>
+
+              {/* Mute badge top-right */}
+              {!micOn && (
+                <div style={{
+                  position: "absolute", top: 10, right: 10,
+                  background: "rgba(220,38,38,0.85)", backdropFilter: "blur(8px)",
+                  borderRadius: 8, padding: "5px 6px", lineHeight: 0,
+                  border: "1px solid rgba(255,100,100,0.3)",
+                }}>
+                  <MicOff size={13} color="#fff" />
+                </div>
               )}
             </div>
+
+            {/* Remote peers */}
+            {peers.map((peer, i) => (
+              <PeerVideo 
+                key={peer.userId} 
+                stream={peer.stream} 
+                label={peer.userName || peer.userId} 
+                spanAll={total === 3 && i === peers.length - 1}
+              />
+            ))}
           </div>
 
-          {/* Remote peers */}
-          {peers.map(peer => (
-            <PeerVideo key={peer.userId} stream={peer.stream} label={peer.userId} />
-          ))}
-        </div>
 
-        {/* Waiting state */}
-        {peers.length === 0 && (
+        </main>
+
+        {/* ── Chat Sidebar ── */}
+        <div style={{
+          position: "absolute", top: 0, right: chatOpen ? 0 : -340,
+          width: 340, height: "100%",
+          background: "linear-gradient(180deg, rgba(10,14,26,0.98) 0%, rgba(8,11,20,0.98) 100%)",
+          backdropFilter: "blur(24px)",
+          borderLeft: "1px solid rgba(255,255,255,0.07)",
+          transition: "right 0.35s cubic-bezier(0.4, 0, 0.2, 1)", zIndex: 50,
+          display: "flex", flexDirection: "column",
+          boxShadow: "-8px 0 32px rgba(0,0,0,0.5)",
+        }}>
+          {/* Header */}
           <div style={{
-            display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "center", gap: 14, marginTop: 32,
+            padding: "18px 20px 16px",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            background: "rgba(255,255,255,0.02)",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            flexShrink: 0,
           }}>
-            <div style={{ display: "flex", gap: 6 }}>
-              {[0, 150, 300].map(delay => (
-                <span
-                  key={delay}
-                  className="dot-bounce"
-                  style={{
-                    width: 8, height: 8, borderRadius: "50%",
-                    background: "rgba(255,255,255,0.25)",
-                    animationDelay: `${delay}ms`,
-                    display: "inline-block",
-                  }}
-                />
-              ))}
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: "50%",
+                background: "linear-gradient(135deg, #4f46e5, #2563eb)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 0 14px rgba(79,70,229,0.4)",
+              }}>
+                <MessageSquare size={15} color="#fff" />
+              </div>
+              <div>
+                <h3 style={{ color: "#fff", margin: 0, fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em" }}>Room Chat</h3>
+                <p style={{ color: "rgba(255,255,255,0.35)", margin: 0, fontSize: 11, fontWeight: 500 }}>
+                  {messages.length} message{messages.length !== 1 ? "s" : ""}
+                </p>
+              </div>
             </div>
-            <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, margin: 0 }}>
-              Waiting for others… share room ID:{" "}
-              <span style={{ color: "rgba(255,255,255,0.65)", fontFamily: "monospace" }}>
-                {roomId.current}
-              </span>
-            </p>
+            <button
+              onClick={toggleChat}
+              style={{
+                background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: "50%", width: 30, height: 30, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "rgba(255,255,255,0.5)", transition: "all 0.2s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.13)"; e.currentTarget.style.color = "#fff"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+            >
+              ✕
+            </button>
           </div>
-        )}
-      </main>
 
-      {/* ── Chat Sidebar ── */}
-      <div style={{
-        position: "absolute", top: 0, right: chatOpen ? 0 : -320,
-        width: 320, height: "100%", background: "rgba(20,20,20,0.95)",
-        backdropFilter: "blur(20px)", borderLeft: "1px solid rgba(255,255,255,0.08)",
-        transition: "right 0.3s cubic-bezier(0.4, 0, 0.2, 1)", zIndex: 50,
-        display: "flex", flexDirection: "column"
-      }}>
-        <div style={{ padding: 16, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <h3 style={{ color: "#fff", margin: 0, fontSize: 16, fontWeight: 600 }}>Room Chat</h3>
-        </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-          {messages.length === 0 ? (
-            <p style={{ color: "rgba(255,255,255,0.3)", textAlign: "center", fontSize: 13, marginTop: 40 }}>
-              No messages yet.<br/>Say hello!
-            </p>
-          ) : (
-            messages.map((m, i) => (
-              <div key={i} style={{ alignSelf: m.from === "You" ? "flex-end" : "flex-start", maxWidth: "85%" }}>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 4, textAlign: m.from === "You" ? "right" : "left" }}>
-                  {m.from} · {new Date(m.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </div>
+          {/* Messages area */}
+          <div style={{
+            flex: 1, overflowY: "auto", padding: "16px 14px",
+            display: "flex", flexDirection: "column", gap: 10,
+            scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.1) transparent",
+          }}>
+            {messages.length === 0 ? (
+              <div style={{
+                display: "flex", flexDirection: "column", alignItems: "center",
+                justifyContent: "center", height: "100%", gap: 12,
+              }}>
                 <div style={{
-                  background: m.from === "You" ? "#2563eb" : "rgba(255,255,255,0.1)",
-                  padding: "8px 12px", borderRadius: 12, color: "#fff", fontSize: 13, lineHeight: 1.4,
-                  borderBottomRightRadius: m.from === "You" ? 4 : 12,
-                  borderBottomLeftRadius: m.from !== "You" ? 4 : 12,
-                  wordBreak: "break-word"
+                  width: 56, height: 56, borderRadius: "50%",
+                  background: "rgba(79,70,229,0.12)",
+                  border: "1px solid rgba(79,70,229,0.25)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  {m.text}
+                  <MessageSquare size={22} color="rgba(99,102,241,0.7)" />
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, margin: "0 0 4px", fontWeight: 600 }}>No messages yet</p>
+                  <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, margin: 0 }}>Say hello to the room! 👋</p>
                 </div>
               </div>
-            ))
-          )}
-          <div ref={chatEndRef} />
-        </div>
-        <form onSubmit={sendMessage} style={{ padding: 16, borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", gap: 8 }}>
-          <input
-            value={chatInput}
-            onChange={e => setChatInput(e.target.value)}
-            placeholder="Type a message…"
-            style={{
-              flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 20, padding: "8px 14px", color: "#fff", fontSize: 13, outline: "none"
-            }}
-          />
-          <button type="submit" disabled={!chatInput.trim()} style={{
-            background: chatInput.trim() ? "#2563eb" : "rgba(255,255,255,0.1)", color: "#fff",
-            border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex",
-            alignItems: "center", justifyContent: "center", cursor: chatInput.trim() ? "pointer" : "default",
-            opacity: chatInput.trim() ? 1 : 0.5, transition: "background 0.2s"
+            ) : (
+              messages.map((m, i) => {
+                const isMe = m.from === "You";
+                const showSender = i === 0 || messages[i - 1].from !== m.from;
+                return (
+                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start", gap: 3 }}>
+                    {showSender && (
+                      <div style={{
+                        display: "flex", alignItems: "center", gap: 6,
+                        flexDirection: isMe ? "row-reverse" : "row",
+                        marginBottom: 2,
+                      }}>
+                        {/* Avatar */}
+                        <div style={{
+                          width: 22, height: 22, borderRadius: "50%",
+                          background: isMe ? "linear-gradient(135deg, #4f46e5, #2563eb)" : "linear-gradient(135deg, #0f766e, #0891b2)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0,
+                        }}>
+                          {m.from.slice(0, 2).toUpperCase()}
+                        </div>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: isMe ? "rgba(139,92,246,0.9)" : "rgba(255,255,255,0.5)" }}>
+                          {isMe ? "You" : m.from}
+                        </span>
+                      </div>
+                    )}
+                    <div style={{ maxWidth: "82%", display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start", gap: 3 }}>
+                      <div style={{
+                        background: isMe
+                          ? "linear-gradient(135deg, #4f46e5 0%, #2563eb 100%)"
+                          : "rgba(255,255,255,0.07)",
+                        padding: "9px 13px",
+                        borderRadius: 16,
+                        borderBottomRightRadius: isMe ? 4 : 16,
+                        borderBottomLeftRadius: isMe ? 16 : 4,
+                        color: "#fff", fontSize: 13, lineHeight: 1.55,
+                        wordBreak: "break-word",
+                        border: isMe ? "none" : "1px solid rgba(255,255,255,0.07)",
+                        boxShadow: isMe ? "0 4px 16px rgba(79,70,229,0.3)" : "none",
+                      }}>
+                        {m.text}
+                      </div>
+                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.22)", padding: "0 4px" }}>
+                        {new Date(m.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Input area */}
+          <form onSubmit={sendMessage} style={{
+            padding: "12px 14px 14px",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+            background: "rgba(255,255,255,0.01)",
+            display: "flex", gap: 8, alignItems: "flex-end",
+            flexShrink: 0,
           }}>
-            ↑
-          </button>
-        </form>
+            <div style={{ flex: 1, position: "relative" }}>
+              <input
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                placeholder="Message the room…"
+                style={{
+                  width: "100%", boxSizing: "border-box",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 22, padding: "10px 16px",
+                  color: "#fff", fontSize: 13, outline: "none",
+                  transition: "border-color 0.2s, background 0.2s",
+                  caretColor: "#6366f1",
+                }}
+                onFocus={e => { e.target.style.borderColor = "rgba(99,102,241,0.5)"; e.target.style.background = "rgba(255,255,255,0.09)"; }}
+                onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.background = "rgba(255,255,255,0.06)"; }}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={!chatInput.trim()}
+              style={{
+                background: chatInput.trim() ? "linear-gradient(135deg, #4f46e5, #2563eb)" : "rgba(255,255,255,0.07)",
+                color: "#fff", border: "none", borderRadius: "50%",
+                width: 40, height: 40, flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: chatInput.trim() ? "pointer" : "default",
+                opacity: chatInput.trim() ? 1 : 0.4,
+                transition: "all 0.2s",
+                boxShadow: chatInput.trim() ? "0 4px 14px rgba(79,70,229,0.4)" : "none",
+              }}
+              onMouseEnter={e => { if (chatInput.trim()) e.currentTarget.style.transform = "scale(1.08)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13" />
+                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
+            </button>
+          </form>
+        </div>
+
       </div>
+
+      {/* ── VoiceChatDisclosure — bottom right, above footer ── */}
+      <div style={{
+        position: "absolute", bottom: 120, right: chatOpen ? 320 + 16 : 16,
+        zIndex: 55, transition: "right 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      }}>
+        <VoiceChatDisclosure
+          title="Participants"
+          users={[
+            { id: "me", name: userNameInput || "You", active: micOn },
+            ...peers.map(p => ({ id: p.userId, name: p.userName || p.userId, active: true } as VoiceUser)),
+          ]}
+        />
       </div>
 
       {/* ── Controls bar ── */}
       <footer style={{
-        display: "flex", alignItems: "center", justifyContent: "center", gap: 12,
-        padding: "16px 0",
-        background: "rgba(0,0,0,0.7)", backdropFilter: "blur(12px)",
-        borderTop: "1px solid rgba(255,255,255,0.07)", flexShrink: 0,
-        position: "relative", zIndex: 60
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "14px 0 18px",
+        background: "rgba(10,16,24,0.85)", backdropFilter: "blur(20px)",
+        borderTop: "1px solid rgba(255,255,255,0.06)", flexShrink: 0,
+        position: "relative", zIndex: 60,
+        gap: 0,
       }}>
-        <CtrlBtn onClick={toggleMic} active={micOn} title={micOn ? "Mute mic" : "Unmute mic"}>
-          {micOn ? <Mic size={20} /> : <MicOff size={20} />}
-        </CtrlBtn>
-
-        <CtrlBtn onClick={toggleCam} active={camOn} title={camOn ? "Turn off camera" : "Turn on camera"}>
-          {camOn ? <Video size={20} /> : <VideoOff size={20} />}
-        </CtrlBtn>
-
-        <CtrlBtn onClick={toggleScreenShare} active={screenOn} title={screenOn ? "Stop sharing" : "Share screen"}>
-          <MonitorUp size={20} />
-        </CtrlBtn>
-
-        <div style={{ position: "relative" }}>
-          <CtrlBtn onClick={toggleChat} active={chatOpen} title="Toggle chat">
-            <MessageSquare size={20} />
+        {/* Pill container */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 40, padding: "6px 12px",
+          backdropFilter: "blur(16px)",
+        }}>
+          <CtrlBtn onClick={toggleMic} active={micOn} title={micOn ? "Mute mic" : "Unmute mic"}>
+            {micOn ? <Mic size={19} /> : <MicOff size={19} color="#f87171" />}
           </CtrlBtn>
-          {unread > 0 && !chatOpen && (
-            <span style={{
-              position: "absolute", top: -2, right: -2, background: "#ef4444", color: "#fff",
-              fontSize: 10, fontWeight: 700, width: 18, height: 18, borderRadius: "50%",
-              display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #000"
-            }}>
-              {unread > 9 ? "9+" : unread}
-            </span>
-          )}
+
+          <CtrlBtn onClick={toggleCam} active={camOn} title={camOn ? "Turn off camera" : "Turn on camera"}>
+            {camOn ? <Video size={19} /> : <VideoOff size={19} color="#f87171" />}
+          </CtrlBtn>
+
+          <CtrlBtn onClick={toggleScreenShare} active={screenOn} title={screenOn ? "Stop sharing" : "Share screen"}>
+            <MonitorUp size={19} />
+          </CtrlBtn>
+
+          <CtrlBtn
+            onClick={toggleChat}
+            active={chatOpen}
+            title="Toggle chat"
+            badge={!chatOpen && unread > 0 ? unread : undefined}
+          >
+            <MessageSquare size={19} />
+          </CtrlBtn>
+
+          <div style={{ width: 1, height: 24, background: "rgba(255,255,255,0.1)", margin: "0 4px" }} />
+
+          <CtrlBtn onClick={leaveRoom} danger title="Leave room">
+            <PhoneOff size={19} />
+          </CtrlBtn>
         </div>
-
-        <div style={{ width: 1, height: 24, background: "rgba(255,255,255,0.1)", margin: "0 4px" }} />
-
-        <CtrlBtn onClick={leaveRoom} danger title="Leave room">
-          <PhoneOff size={20} />
-        </CtrlBtn>
       </footer>
     </div>
   );

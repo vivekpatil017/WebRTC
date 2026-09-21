@@ -6,6 +6,7 @@ interface Client {
   ws: WebSocket;
   userId: string;
   roomId: string;
+  userName: string;
 }
 
 // roomId -> Set<Client>
@@ -28,8 +29,8 @@ wss.on("connection", (ws: WebSocket) => {
     switch (message.type) {
 
       case "join": {
-        const { roomId, userId } = message;
-        if (!roomId || !userId) return;
+        const { roomId, userId, userName } = message;
+        if (!roomId || !userId || !userName) return;
 
         if (!rooms.has(roomId)) rooms.set(roomId, new Set());
         const room = rooms.get(roomId)!;
@@ -45,21 +46,21 @@ wss.on("connection", (ws: WebSocket) => {
           return;
         }
 
-        const client: Client = { ws, userId, roomId };
+        const client: Client = { ws, userId, roomId, userName };
         room.add(client);
         clients.set(ws, client);
 
         // Tell the new joiner which peers are already in the room
         const existingPeers = [...room]
           .filter(c => c.userId !== userId)
-          .map(c => c.userId);
+          .map(c => ({ userId: c.userId, userName: c.userName }));
 
         ws.send(JSON.stringify({ type: "joined", roomId, userId, peers: existingPeers }));
 
         // Notify existing peers that someone new joined
         room.forEach(c => {
           if (c.userId !== userId) {
-            c.ws.send(JSON.stringify({ type: "peer-joined", userId }));
+            c.ws.send(JSON.stringify({ type: "peer-joined", userId, userName }));
           }
         });
         break;
