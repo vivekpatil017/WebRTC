@@ -1,15 +1,13 @@
-import React from 'react'
-import {BrowserRouter, Route, Routes} from "react-router-dom"
-import {Receiver} from "./components/Receiver"
-import {Sender} from "./components/Sender"
-
+import { BrowserRouter, Route, Routes } from "react-router-dom"
+import { Room } from "./components/Room"
+import Hero from "./components/ui/hero"
 
 const App = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/receiver" element={<Receiver/>}/>
-        <Route path="/sender" element={<Sender/>}/>
+        <Route path="/" element={<Hero />} />
+        <Route path="/room" element={<Room />} />
       </Routes>
     </BrowserRouter>
   )

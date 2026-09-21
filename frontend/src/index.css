@@ -1,4 +1,87 @@
-body{
-    background: black;
-    color: white;
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Great+Vibes&family=Pinyon+Script&family=Inter:wght@300;400;500;600&display=swap");
+
+@theme inline {
+  --font-dancing: "Dancing Script", cursive;
+  --font-inter: "Inter", sans-serif;
 }
+
+.cursive-yellow {
+  font-family: 'Great Vibes', cursive;
+  color: #f5d74e;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  text-shadow: 0 0 28px rgba(245, 215, 78, 0.4);
+}
+
+body {
+  background: black;
+  color: white;
+  font-family: "Inter", sans-serif;
+}
+
+/* ── Room animations ─────────────────────────────────────── */
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(110%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes toastOut {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(110%); }
+}
+@keyframes tileIn {
+  from { opacity: 0; transform: scale(0.93) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+@keyframes joinFadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes bounceDot {
+  0%, 80%, 100% { transform: translateY(0); }
+  40%           { transform: translateY(-6px); }
+}
+@keyframes pulseRing {
+  0%   { box-shadow: 0 0 0 0 rgba(255,255,255,0.15); }
+  70%  { box-shadow: 0 0 0 8px rgba(255,255,255,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+}
+
+.toast-in  { animation: toastIn  0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.toast-out { animation: toastOut 0.25s ease-in forwards; }
+.tile-in   { animation: tileIn   0.4s cubic-bezier(0.34,1.2,0.64,1) forwards; }
+.join-fade { animation: joinFadeUp 0.5s ease-out both; }
+
+.shimmer-bg {
+  background: linear-gradient(90deg, #1c1c1c 25%, #2a2a2a 50%, #1c1c1c 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite linear;
+}
+
+.dot-bounce { animation: bounceDot 1.2s infinite ease-in-out; }
+.pulse-ring { animation: pulseRing 2s infinite; }
+
+/* Control button base */
+.ctrl-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.2s, opacity 0.2s;
+}
+.ctrl-btn:active { transform: scale(0.88); }
+.ctrl-btn.on  { background: rgba(255,255,255,0.12); color: #fff; }
+.ctrl-btn.on:hover  { background: rgba(255,255,255,0.22); }
+.ctrl-btn.off { background: #dc2626; color: #fff; }
+.ctrl-btn.off:hover { background: #b91c1c; }
+.ctrl-btn.leave { background: #dc2626; color: #fff; }
+.ctrl-btn.leave:hover { background: #b91c1c; }
