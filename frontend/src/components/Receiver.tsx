@@ -6,7 +6,7 @@ export function Receiver() {
   const pcRef = useRef<RTCPeerConnection | null>(null);
 
   useEffect(() => {
-    const ws = new WebSocket(import.meta.env.VITE_WS_URL || "ws://localhost:8080");
+    const ws = new WebSocket(import.meta.env.VITE_WS_URL || "wss://webrtc-3-mr8z.onrender.com");
 
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: "receiver" }));
@@ -75,4 +75,4 @@ export function Receiver() {
       </div>
     </div>
   );
-}
+}
