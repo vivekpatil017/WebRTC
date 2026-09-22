@@ -26,45 +26,7 @@ The signaling server is built using Node.js and the `ws` library for WebSocket c
 
 ## The WebRTC Handshake Lifecycle
 
-The signaling server acts as a low-latency message router for the WebRTC signaling sequence. Below is a visual representation of how two peers establish a connection using the backend signaling server.
-
-```mermaid
-sequenceDiagram
-    participant Peer A (Caller)
-    participant Signaling Server
-    participant Peer B (Callee)
-
-    Note over Peer A, Peer B: Phase 1: Room Join & Discovery
-    Peer A->>Signaling Server: Join Room (roomId)
-    Peer B->>Signaling Server: Join Room (roomId)
-    Signaling Server->>Peer A: Notify Peer B Joined
-
-    Note over Peer A, Peer B: Phase 2: Session Description Protocol (SDP) Exchange
-    Peer A->>Peer A: createOffer()
-    Peer A->>Peer A: setLocalDescription(offer)
-    Peer A->>Signaling Server: Send Offer
-    Signaling Server->>Peer B: Forward Offer
-    
-    Peer B->>Peer B: setRemoteDescription(offer)
-    Peer B->>Peer B: createAnswer()
-    Peer B->>Peer B: setLocalDescription(answer)
-    
-    Peer B->>Signaling Server: Send Answer
-    Signaling Server->>Peer A: Forward Answer
-    Peer A->>Peer A: setRemoteDescription(answer)
-
-    Note over Peer A, Peer B: Phase 3: Interactive Connectivity Establishment (ICE)
-    Peer A->>Signaling Server: Send ICE Candidate
-    Signaling Server->>Peer B: Forward ICE Candidate
-    Peer B->>Peer B: addIceCandidate()
-
-    Peer B->>Signaling Server: Send ICE Candidate
-    Signaling Server->>Peer A: Forward ICE Candidate
-    Peer A->>Peer A: addIceCandidate()
-
-    Note over Peer A, Peer B: Phase 4: Direct Media Streaming
-    Peer A<-->>Peer B: Direct Peer-to-Peer Media Stream (SRTP Encrypted)
-```
+The signaling server acts as a low-latency message router for the WebRTC signaling sequence.
 
 ### Detailed Sequence Breakdown
 
