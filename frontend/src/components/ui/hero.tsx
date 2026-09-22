@@ -66,6 +66,17 @@ export default function Hero(props: Partial<typeof settings>) {
       pingArea={[0.22, 0.18, 0.78, 0.82]}
       className="bg-background flex min-h-[max(560px,100svh)] w-full flex-col text-white"
     >
+      <div className="absolute top-6 right-8 z-[100]">
+        <button
+          onClick={() => {
+            document.getElementById('about-section')?.scrollIntoView({ behavior: 'smooth' })
+          }}
+          className="text-black bg-white hover:bg-neutral-200 transition-all duration-300 rounded-full px-6 py-2.5 font-bold text-sm shadow-[0_0_15px_rgba(255,255,255,0.4)] hover:shadow-[0_0_25px_rgba(255,255,255,0.6)] hover:scale-105 active:scale-95"
+        >
+          About
+        </button>
+      </div>
+
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_34%_30%_at_50%_50%,var(--color-background)_0%,transparent_100%)]"

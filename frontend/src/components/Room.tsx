@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   Mic, MicOff, Video, VideoOff, PhoneOff,
-  Users, Copy, Check, Wifi, MessageSquare, MonitorUp, Settings
+  Copy, Check, Wifi, MessageSquare, MonitorUp
 } from "lucide-react";
 import { motion } from "motion/react";
 import WorldMap from "@/components/ui/world-map";
@@ -331,7 +331,7 @@ export function Room() {
       return;
     }
 
-    const ws = new WebSocket("ws://localhost:8080");
+    const ws = new WebSocket(import.meta.env.VITE_WS_URL || "ws://localhost:8080");
     socketRef.current = ws;
     ws.onopen = () => send({ type: "join", roomId: id, userId: userId.current, userName: name });
 

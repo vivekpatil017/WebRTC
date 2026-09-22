@@ -7,7 +7,7 @@ export function Sender() {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:8080");
+    const ws = new WebSocket(import.meta.env.VITE_WS_URL || "ws://localhost:8080");
     setSocket(ws);
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: "sender" }));

@@ -2,7 +2,8 @@ import FlowArt, { FlowSection } from '@/components/ui/story-scroll';
 
 export function AboutSection() {
   return (
-    <FlowArt aria-label="WebRTC Platform Overview">
+    <div id="about-section">
+      <FlowArt aria-label="WebRTC Platform Overview">
 
       {/* ── 01 What is this ───────────────────────────────────────── */}
       <FlowSection
@@ -45,9 +46,12 @@ export function AboutSection() {
             </h2>
           </div>
           <div className="flex-1 rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl shadow-black/80 self-center">
-            <img
-              src="/img-room.jpg"
-              alt="WebRTC video call with multiple participants in a sleek dark UI"
+            <video
+              src="/see_this_bro_i_want_that_ui_ex.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
               className="w-full h-auto block object-cover"
             />
           </div>
@@ -93,9 +97,12 @@ export function AboutSection() {
             </h2>
           </div>
           <div className="flex-1 rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl shadow-black/80 self-center">
-            <img
-              src="/img-p2p.jpg"
-              alt="Peer-to-peer network connection visualization"
+            <video
+              src="/prooject%20stuff.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
               className="w-full h-auto block object-cover"
             />
           </div>
@@ -142,7 +149,7 @@ export function AboutSection() {
           </div>
           <div className="flex-1 rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl shadow-black/80 self-center">
             <img
-              src="/img-chat.jpg"
+              src="/team-sync.png"
               alt="Live chat sidebar alongside screen sharing in a video call"
               className="w-full h-auto block object-cover"
             />
@@ -222,5 +229,6 @@ export function AboutSection() {
       </FlowSection>
 
     </FlowArt>
+    </div>
   );
 }
