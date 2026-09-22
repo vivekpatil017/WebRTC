@@ -247,7 +247,7 @@ export function Room() {
   const [camOn, setCamOn] = useState(true);
   const [copied, setCopied] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [messages, setMessages] = useState<{ from: string, text: string, time: number }[]>([]);
+  const [messages, setMessages] = useState<{ from: string, text: string, time: number, isMe?: boolean }[]>([]);
   const [unread, setUnread] = useState(0);
   const [screenOn, setScreenOn] = useState(false);
   const [chatInput, setChatInput] = useState("");
@@ -387,7 +387,7 @@ export function Room() {
         case "chat": {
           // If we receive a message from a peer, use their display name
           const peerName = peers.find(p => p.userId === msg.from)?.userName || msg.from;
-          setMessages(prev => [...prev, { from: peerName, text: msg.text, time: msg.time }]);
+          setMessages(prev => [...prev, { from: peerName, text: msg.text, time: msg.time, isMe: false }]);
           if (!chatOpen) setUnread(u => u + 1);
           setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
           break;
@@ -459,7 +459,7 @@ export function Room() {
     if (!text) return;
     const msg = { type: "chat", text, time: Date.now() };
     send(msg);
-    setMessages(prev => [...prev, { from: "You", text, time: msg.time }]);
+    setMessages(prev => [...prev, { from: userNameInput || "You", text, time: msg.time, isMe: true }]);
     setChatInput("");
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
   }
@@ -651,14 +651,7 @@ export function Room() {
       }}>
         {/* Left: logo + room name */}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            width: 8, height: 8, borderRadius: "50%", background: "#22c55e",
-            boxShadow: "0 0 8px rgba(34,197,94,0.8)", flexShrink: 0,
-          }} />
-          <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, fontWeight: 500 }}>
-            LIVE
-          </span>
-          <div style={{ width: 1, height: 14, background: "rgba(255,255,255,0.1)" }} />
+
           <span style={{
             color: "#fff", fontWeight: 700, fontSize: 15,
             letterSpacing: "-0.01em",
@@ -868,27 +861,18 @@ export function Room() {
               </div>
             ) : (
               messages.map((m, i) => {
-                const isMe = m.from === "You";
+                const isMe = m.isMe ?? false;
                 const showSender = i === 0 || messages[i - 1].from !== m.from;
                 return (
-                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start", gap: 3 }}>
+                  <div key={i} style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start", gap: 3 }}>
                     {showSender && (
                       <div style={{
                         display: "flex", alignItems: "center", gap: 6,
                         flexDirection: isMe ? "row-reverse" : "row",
                         marginBottom: 2,
                       }}>
-                        {/* Avatar */}
-                        <div style={{
-                          width: 22, height: 22, borderRadius: "50%",
-                          background: isMe ? "linear-gradient(135deg, #4f46e5, #2563eb)" : "linear-gradient(135deg, #0f766e, #0891b2)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0,
-                        }}>
-                          {m.from.slice(0, 2).toUpperCase()}
-                        </div>
                         <span style={{ fontSize: 11, fontWeight: 600, color: isMe ? "rgba(139,92,246,0.9)" : "rgba(255,255,255,0.5)" }}>
-                          {isMe ? "You" : m.from}
+                          {m.from}
                         </span>
                       </div>
                     )}
@@ -902,7 +886,7 @@ export function Room() {
                         borderBottomRightRadius: isMe ? 4 : 16,
                         borderBottomLeftRadius: isMe ? 16 : 4,
                         color: "#fff", fontSize: 13, lineHeight: 1.55,
-                        wordBreak: "break-word",
+                        wordBreak: "break-word", overflowWrap: "anywhere", whiteSpace: "pre-wrap",
                         border: isMe ? "none" : "1px solid rgba(255,255,255,0.07)",
                         boxShadow: isMe ? "0 4px 16px rgba(79,70,229,0.3)" : "none",
                       }}>
@@ -973,7 +957,7 @@ export function Room() {
 
       {/* ── VoiceChatDisclosure — bottom right, above footer ── */}
       <div style={{
-        position: "absolute", bottom: 120, right: chatOpen ? 320 + 16 : 16,
+        position: "absolute", bottom: 120, right: chatOpen ? 340 + 16 : 16,
         zIndex: 55, transition: "right 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       }}>
         <VoiceChatDisclosure
